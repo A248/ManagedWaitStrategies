@@ -29,16 +29,18 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class FactoryImpl extends DeadlockFreeFutureFactory implements ExtensionContext.Store.CloseableResource {
+final class FactoryImpl extends DeadlockFreeFutureFactory implements ExtensionContext.Store.CloseableResource {
 
 	private final ScheduledExecutorService mainThreadExecutor;
 	private final Thread mainThread;
-	private ScheduledFuture<?> task;
+	private final ScheduledFuture<?> task;
 	
-	FactoryImpl(ManagedWaitStrategy waitStrategy, Thread mainThread, ScheduledExecutorService mainThreadExecutor) {
-		super(new SimpleTaskQueue(), waitStrategy);
+	private FactoryImpl(TaskQueue taskQueue, ManagedWaitStrategy waitStrategy,
+						Thread mainThread, ScheduledExecutorService mainThreadExecutor, ScheduledFuture<?> task) {
+		super(taskQueue, waitStrategy);
 		this.mainThread = mainThread;
 		this.mainThreadExecutor = mainThreadExecutor;
+		this.task = task;
 	}
 
 	static FactoryImpl create(ManagedWaitStrategy waitStrategy) {
@@ -50,10 +52,10 @@ class FactoryImpl extends DeadlockFreeFutureFactory implements ExtensionContext.
 		} catch (InterruptedException | ExecutionException ex) {
 			throw Assertions.<RuntimeException>fail(ex);
 		}
-		FactoryImpl factory = new FactoryImpl(waitStrategy, mainThread, mainThreadExecutor);
-		factory.task = mainThreadExecutor.scheduleWithFixedDelay(
-				factory.runQueuedTasks, 0L, 100L, TimeUnit.MILLISECONDS);
-		return factory;
+		TaskQueue taskQueue = new SimpleTaskQueue();
+		ScheduledFuture<?> task = mainThreadExecutor.scheduleWithFixedDelay(
+				taskQueue::pollAndRunAll, 0L, 100L, TimeUnit.MILLISECONDS);
+		return new FactoryImpl(taskQueue, waitStrategy, mainThread, mainThreadExecutor, task);
 	}
 
 	ScheduledExecutorService mainThreadExecutor() {

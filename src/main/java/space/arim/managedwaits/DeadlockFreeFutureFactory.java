@@ -41,7 +41,7 @@ public abstract class DeadlockFreeFutureFactory extends AbstractFactoryOfTheFutu
 	private final TaskQueue taskQueue;
 	private final ManagedWaitStrategy waitStrategy;
 
-	final Runnable runQueuedTasks = new PeriodicSyncUnleasher();
+	private final Runnable runQueuedTasks = new PeriodicSyncUnleasher();
 	final SynchronousExecutor trustedSyncExecutor = new TrustedSyncExecutor();
 
 	/**
@@ -112,18 +112,14 @@ public abstract class DeadlockFreeFutureFactory extends AbstractFactoryOfTheFutu
 	}
 
 	/**
-	 * Runs all scheduled tasks. Should only be called if known to be on main thread.
+	 * Unleashes all sync tasks. Should only be run if known to be on main thread.
 	 *
 	 */
-	private void unleashSyncTasks() {
-		taskQueue.pollAndRunAll();
-	}
-
 	private class PeriodicSyncUnleasher implements Runnable {
 
 		@Override
 		public void run() {
-			unleashSyncTasks();
+			taskQueue.pollAndRunAll();
 		}
 	}
 
