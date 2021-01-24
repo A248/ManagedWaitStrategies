@@ -24,6 +24,7 @@ import space.arim.omnibus.util.concurrent.FactoryOfTheFuture;
 import space.arim.omnibus.util.concurrent.SynchronousExecutor;
 import space.arim.omnibus.util.concurrent.impl.AbstractFactoryOfTheFuture;
 
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -43,9 +44,16 @@ public abstract class DeadlockFreeFutureFactory extends AbstractFactoryOfTheFutu
 	final Runnable runQueuedTasks = new PeriodicSyncUnleasher();
 	final SynchronousExecutor trustedSyncExecutor = new TrustedSyncExecutor();
 
-	DeadlockFreeFutureFactory(TaskQueue taskQueue, ManagedWaitStrategy waitStrategy) {
-		this.taskQueue = taskQueue;
-		this.waitStrategy = waitStrategy;
+	/**
+	 * Creates an instance
+	 *
+	 * @param taskQueue the task queue
+	 * @param waitStrategy the wait strategy
+	 * @throws NullPointerException if either parameter is null
+	 */
+	protected DeadlockFreeFutureFactory(TaskQueue taskQueue, ManagedWaitStrategy waitStrategy) {
+		this.taskQueue = Objects.requireNonNull(taskQueue);
+		this.waitStrategy = Objects.requireNonNull(waitStrategy);
 	}
 
 	@Override
